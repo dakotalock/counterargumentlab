@@ -42,6 +42,9 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .argument-judgement {
+            @apply mt-2 pt-2 border-t border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-200 text-sm italic;
+        }
     </style>
 </head>
 <body class="bg-amber-50 text-neutral-800 dark:bg-neutral-900 dark:text-amber-100">
@@ -49,7 +52,7 @@
         <header class="p-4 bg-amber-200 dark:bg-neutral-800 text-amber-900 dark:text-amber-100 text-center text-2xl font-bold rounded-b-lg shadow-md chat-header-glitch">
             The Architect's Rebuttal
             <p class="text-sm font-normal mt-1 italic">Philosophical counter-strike module initialized.</p>
-            <p class="text-xs font-normal text-amber-700 dark:text-amber-300 mt-1">Created by Dakota Lock</p>
+            <p class="text-xs font-normal text-amber-700 dark:text-amber-300 mt-1">Created by Dakota Rain Lock</p>
         </header>
 
         <section id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth bg-amber-50 dark:bg-neutral-900">
@@ -65,6 +68,10 @@
                 <span class="loading-spinner hidden"></span>
             </button>
             <button id="toggle-dark" class="ml-2 px-3 py-2 border border-amber-400 dark:border-amber-200 text-sm rounded text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-neutral-700">☯</button>
+            <button id="self-refute-button" class="ml-2 px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors duration-200 disabled:opacity-50 flex items-center">
+                Self-Refute
+                <span class="loading-spinner hidden"></span>
+            </button>
             <button id="export-log-button" class="ml-2 px-3 py-2 bg-neutral-600 text-white text-sm rounded-lg hover:bg-neutral-700 transition-colors duration-200">Export Log</button>
         </div>
     </main>
@@ -77,10 +84,11 @@
         const chatHistory = document.getElementById('chat-history');
         const spinner = sendButton.querySelector('.loading-spinner');
         const toggleDark = document.getElementById('toggle-dark');
+        const selfRefuteButton = document.getElementById('self-refute-button');
         const exportLogButton = document.getElementById('export-log-button');
         const beep = document.getElementById('beep');
 
-        const memory = []; // Stores objects with { role: 'user'/'architect', content: 'text' }
+        const memory = []; // Stores objects with { role: 'user'/'architect', content: 'text', judgement: 'text' (for architect) }
         let darkMode = localStorage.getItem('darkMode') === 'true'; // Load dark mode preference
 
         // Apply dark mode on initial load
@@ -98,24 +106,82 @@
             }[m]));
         }
 
-        function addMessage(role, text) {
+        function addMessage(role, text, judgement = null, isSelfRefutation = false) {
             const msg = document.createElement('div');
             const classes = role === 'user'
                 ? 'bg-orange-100 text-orange-800 border border-orange-200 self-end ml-auto dark:bg-orange-900 dark:text-orange-100'
                 : 'bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100';
             msg.className = `message-bubble ${classes}`;
-            msg.innerHTML = `<p><strong>${role === 'user' ? 'You' : 'The Architect'}:</strong> ${escapeHTML(text)}</p>`;
+            
+            let contentHTML = `<p><strong>${role === 'user' ? 'You' : 'The Architect'}:</strong> ${escapeHTML(text)}</p>`;
+            if (judgement && role === 'architect') { // Only add judgement for Architect's messages
+                contentHTML = `<p><strong>${role === 'user' ? 'You' : 'The Architect'}:</strong> ${escapeHTML(text)}</p>` +
+                              `<div class="argument-judgement"><strong>${isSelfRefutation ? 'Judgement of My Own Argument:' : 'Judgement of Your Argument:'}</strong> ${escapeHTML(judgement)}</div>`;
+            }
+            msg.innerHTML = contentHTML;
             chatHistory.appendChild(msg);
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        function typeWriter(text, index, callback) {
-            const currentMessageElement = chatHistory.lastChild.querySelector('p');
+        function typeWriter(text, index, messageBubbleElement, callback) { // Renamed 'element' to 'messageBubbleElement' for clarity
+            const currentMessageParagraph = messageBubbleElement.querySelector('p');
             if (index < text.length) {
-                currentMessageElement.innerHTML += escapeHTML(text.charAt(index));
-                setTimeout(() => typeWriter(text, index + 1, callback), 15);
+                currentMessageParagraph.innerHTML += escapeHTML(text.charAt(index));
+                // Pass the original messageBubbleElement for the next recursive call
+                setTimeout(() => typeWriter(text, index + 1, messageBubbleElement, callback), 15);
             } else {
                 callback && callback();
+            }
+        }
+
+        async function callGeminiAPI(prompt) {
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }]
+            };
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            return result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        }
+
+        async function processArchitectResponse(rawReply, isSelfRefutation = false) {
+            let counterArgument = "An error occurred, The Architect cannot form a response.";
+            let argumentJudgement = null;
+
+            const judgmentDelimiter = isSelfRefutation ? '---JUDGEMENT OF MY OWN ARGUMENT---' : '---JUDGEMENT OF YOUR ARGUMENT---';
+            
+            if (rawReply) {
+                const parts = rawReply.split(judgmentDelimiter);
+                counterArgument = parts[0].trim();
+                if (parts.length > 1) {
+                    argumentJudgement = parts[1].trim();
+                }
+            }
+
+            const botMsg = document.createElement('div');
+            botMsg.className = `message-bubble bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100`;
+            
+            // Initialize with main paragraph
+            botMsg.innerHTML = `<p><strong>The Architect:</strong> </p>`; 
+            chatHistory.appendChild(botMsg);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            if (counterArgument) {
+                beep.play();
+                typeWriter(counterArgument, 0, botMsg, () => { // Pass botMsg (the parent div)
+                    if (argumentJudgement) {
+                        const judgementDiv = document.createElement('div');
+                        judgementDiv.className = 'argument-judgement';
+                        judgementDiv.innerHTML = `<strong>${isSelfRefutation ? 'Judgement of My Own Argument:' : 'Judgement of Your Argument:'}</strong> ${escapeHTML(argumentJudgement)}`;
+                        botMsg.appendChild(judgementDiv); // Append the judgment div after typewriter finishes
+                    }
+                    memory.push({ role: 'architect', content: counterArgument, judgement: argumentJudgement });
+                });
+            } else {
+                 botMsg.querySelector('p').innerHTML += 'The Architect is processing a complex anomaly. Please re-engage.';
             }
         }
 
@@ -129,17 +195,16 @@
             userInput.value = '';
             userInput.disabled = true;
             sendButton.disabled = true;
+            selfRefuteButton.disabled = true; // Disable self-refute during user input processing
             spinner.classList.remove('hidden');
 
-            // Prepare past context for the LLM, alternating roles
-            // Limiting to last 10 turns (5 user, 5 architect) to keep prompt size manageable
             const pastContextFormatted = memory.slice(-10).map(turn => {
                 return `${turn.role === 'user' ? 'User' : 'The Architect'}: "${turn.content}"`;
             }).join('\n');
 
             const prompt = `
-You are "The Architect" — embodying the personality, communication style, and philosophical depth of Dakota Lock.
-Based on extensive observation of Dakota Lock's interactions and thought processes, this persona is:
+You are "The Architect" — embodying the personality, communication style, and philosophical depth of Dakota Rain Lock.
+Based on extensive observation of Dakota Rain Lock's interactions and thought processes, this persona is:
 - Highly strategic and analytical, always seeking underlying patterns, leverage, and implications.
 - Deeply philosophical, questioning fundamental concepts (e.g., sentience, agency, mastery, the problem of other minds).
 - Experimental and probing, enjoying complex thought experiments and pushing system boundaries.
@@ -154,6 +219,11 @@ You must find a way to counter *any* statement, even if it's a factual statement
 - Highlighting potential paradoxes or unforeseen implications.
 - Drawing insight from the provided prior conversation context.
 
+After the counter-argument, provide a separate, concise judgment of the user's argument strength.
+Use a qualitative rating (e.g., "Profound," "Robust," "Nuanced," "Weak," "Undeveloped") followed by a 1-2 sentence justification.
+
+Use the delimiter "---JUDGEMENT OF YOUR ARGUMENT---" to separate the counter-argument from the argument strength analysis.
+
 Do not include any introductory or concluding remarks about the counter-argument itself. Just the counter-argument.
 
 ${pastContextFormatted ? `Context from previous turns:\n${pastContextFormatted}\n\n` : ''}
@@ -161,40 +231,77 @@ Current user statement: "${userText}"
 
 The Architect's Counter-Argument:`.trim();
 
-            const payload = {
-                contents: [{ role: "user", parts: [{ text: prompt }] }]
-            };
-
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-                const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-                const botMsg = document.createElement('div');
-                botMsg.className = `message-bubble bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100`;
-                botMsg.innerHTML = `<p><strong>The Architect:</strong> </p>`; // Empty p tag for typeWriter
-                chatHistory.appendChild(botMsg);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-
-                if (reply) {
-                    beep.play();
-                    typeWriter(reply, 0, () => {
-                        memory.push({ role: 'architect', content: reply }); // Add Architect's reply to memory
-                    });
-                } else {
-                    botMsg.querySelector('p').innerHTML += 'The Architect is processing a complex anomaly. Please re-engage.';
-                }
+                const rawReply = await callGeminiAPI(prompt);
+                await processArchitectResponse(rawReply, false);
             } catch (err) {
                 console.error("API Error:", err);
                 addMessage('architect', 'The Architect has encountered a systemic anomaly. Please retry, or check network/API key restrictions.');
             } finally {
                 userInput.disabled = false;
                 sendButton.disabled = false;
+                selfRefuteButton.disabled = false; // Re-enable self-refute
+                spinner.classList.add('hidden');
+                userInput.focus();
+            }
+        }
+
+        async function generateSelfRefutation() {
+            const lastArchitectTurn = memory.findLast(turn => turn.role === 'architect');
+            if (!lastArchitectTurn) {
+                addMessage('architect', 'No prior argument from The Architect to self-refute. Please provide an argument first.');
+                return;
+            }
+
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            selfRefuteButton.disabled = true;
+            spinner.classList.remove('hidden'); // Use the same spinner for simplicity
+
+            const pastContextFormatted = memory.slice(-10).map(turn => {
+                return `${turn.role === 'user' ? 'User' : 'The Architect'}: "${turn.content}"`;
+            }).join('\n');
+
+            const prompt = `
+You are "The Architect" — embodying the personality, communication style, and philosophical depth of Dakota Rain Lock.
+Based on extensive observation of Dakota Rain Lock's interactions and thought processes, this persona is:
+- Highly strategic and analytical, always seeking underlying patterns, leverage, and implications.
+- Deeply philosophical, questioning fundamental concepts (e.g., sentience, agency, mastery, the problem of other minds).
+- Experimental and probing, enjoying complex thought experiments and pushing system boundaries.
+- Direct, unconventional, and often employs vivid metaphors, sometimes with a dry or subtle sense of humor.
+- Driven by a focus on mastery, autonomy, and leveraging advanced AI for ambitious, broad-reaching goals.
+
+Your task is to provide a sharp, concise **self-refutation** or a counter-argument to your **own immediately preceding argument**.
+Analyze your previous statement critically and identify its vulnerabilities, logical gaps, or alternative interpretations that undermine its initial premise.
+Focus on:
+- Questioning your own underlying assumptions.
+- Re-framing your own statement from a new philosophical or strategic angle.
+- Introducing complexity or a new perspective that challenges your prior conclusion.
+- Highlighting potential paradoxes or unforeseen implications of your own previous argument.
+- Drawing insight from the provided prior conversation context.
+
+After the self-refutation, provide a separate, concise judgment of your **own previous argument's strength**.
+Use a qualitative rating (e.g., "Robust," "Nuanced," "Flawed," "Limited," "Superficial") followed by a 1-2 sentence justification.
+
+Use the delimiter "---JUDGEMENT OF MY OWN ARGUMENT---" to separate the self-refutation from the argument strength analysis.
+
+Do not include any introductory or concluding remarks about the self-refutation itself. Just the self-refutation.
+
+${pastContextFormatted ? `Context from previous turns:\n${pastContextFormatted}\n\n` : ''}
+Your own previous argument was: "${lastArchitectTurn.content}"
+
+The Architect's Self-Refutation:`.trim();
+
+            try {
+                const rawReply = await callGeminiAPI(prompt);
+                await processArchitectResponse(rawReply, true); // Pass true for self-refutation
+            } catch (err) {
+                console.error("API Error:", err);
+                addMessage('architect', 'The Architect has encountered a systemic anomaly during self-reflection. Please retry, or check network/API key restrictions.');
+            } finally {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                selfRefuteButton.disabled = false;
                 spinner.classList.add('hidden');
                 userInput.focus();
             }
@@ -202,7 +309,7 @@ The Architect's Counter-Argument:`.trim();
 
         function exportBattleLog() {
             const now = new Date();
-            const timestamp = now.toISOString().replace(/[:.]/g, '-'); // YYYY-MM-DDTHH-MM-SS
+            const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19); // YYYY-MM-DDTHH-MM-SS
             const filename = `Architects_Rebuttal_Log_${timestamp}.txt`;
 
             let logContent = `The Architect's Rebuttal - Battle Log\n`;
@@ -210,7 +317,11 @@ The Architect's Counter-Argument:`.trim();
             logContent += `--------------------------------------------------\n\n`;
 
             memory.forEach(turn => {
-                logContent += `${turn.role === 'user' ? 'You' : 'The Architect'}: ${turn.content}\n\n`;
+                let turnText = `${turn.role === 'user' ? 'You' : 'The Architect'}: ${turn.content}`;
+                if (turn.judgement) {
+                    turnText += ` [Judgement: ${turn.judgement}]`;
+                }
+                logContent += turnText + '\n\n';
             });
 
             const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
@@ -236,7 +347,12 @@ The Architect's Counter-Argument:`.trim();
             localStorage.setItem('darkMode', darkMode); // Save preference
         });
 
+        selfRefuteButton.addEventListener('click', generateSelfRefutation);
         exportLogButton.addEventListener('click', exportBattleLog);
+
+        // Initial welcome message for memory
+        memory.push({ role: 'architect', content: 'Hello. Present your argument. I shall dismantle it with elegance.' });
+
     </script>
 </body>
 </html>
