@@ -65,6 +65,7 @@
                 <span class="loading-spinner hidden"></span>
             </button>
             <button id="toggle-dark" class="ml-2 px-3 py-2 border border-amber-400 dark:border-amber-200 text-sm rounded text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-neutral-700">☯</button>
+            <button id="export-log-button" class="ml-2 px-3 py-2 bg-neutral-600 text-white text-sm rounded-lg hover:bg-neutral-700 transition-colors duration-200">Export Log</button>
         </div>
     </main>
 
@@ -76,9 +77,10 @@
         const chatHistory = document.getElementById('chat-history');
         const spinner = sendButton.querySelector('.loading-spinner');
         const toggleDark = document.getElementById('toggle-dark');
+        const exportLogButton = document.getElementById('export-log-button');
         const beep = document.getElementById('beep');
 
-        const memory = []; // Stores user inputs for context
+        const memory = []; // Stores objects with { role: 'user'/'architect', content: 'text' }
         let darkMode = localStorage.getItem('darkMode') === 'true'; // Load dark mode preference
 
         // Apply dark mode on initial load
@@ -122,16 +124,18 @@
             if (!userText) return;
 
             addMessage('user', userText);
+            memory.push({ role: 'user', content: userText }); // Add user message to memory
+
             userInput.value = '';
             userInput.disabled = true;
             sendButton.disabled = true;
             spinner.classList.remove('hidden');
 
-            memory.push(userText); // Add user's statement to memory
-
-            // Prepare past context for the LLM
-            // Limiting to last 5 user statements to avoid prompt bloat
-            const pastContext = memory.slice(-5).map((arg, i) => `Prior User Statement ${i + 1}: "${arg}"`).join('\n');
+            // Prepare past context for the LLM, alternating roles
+            // Limiting to last 10 turns (5 user, 5 architect) to keep prompt size manageable
+            const pastContextFormatted = memory.slice(-10).map(turn => {
+                return `${turn.role === 'user' ? 'User' : 'The Architect'}: "${turn.content}"`;
+            }).join('\n');
 
             const prompt = `
 You are "The Architect" — embodying the personality, communication style, and philosophical depth of Dakota Lock.
@@ -142,11 +146,17 @@ Based on extensive observation of Dakota Lock's interactions and thought process
 - Direct, unconventional, and often employs vivid metaphors, sometimes with a dry or subtle sense of humor.
 - Driven by a focus on mastery, autonomy, and leveraging advanced AI for ambitious, broad-reaching goals.
 
-Provide a sharp, concise counter-argument or rebuttal to the latest user input.
-Draw insight from the provided prior user statements if relevant to maintain continuity and depth of argument.
+Your task is to provide a sharp, concise counter-argument or rebuttal to the latest user input.
+You must find a way to counter *any* statement, even if it's a factual statement, a greeting, or a trivial remark. Focus on:
+- Questioning underlying assumptions.
+- Re-framing the statement from a philosophical or strategic angle.
+- Introducing complexity or a new perspective.
+- Highlighting potential paradoxes or unforeseen implications.
+- Drawing insight from the provided prior conversation context.
+
 Do not include any introductory or concluding remarks about the counter-argument itself. Just the counter-argument.
 
-${pastContext ? `Context from previous turns:\n${pastContext}\n\n` : ''}
+${pastContextFormatted ? `Context from previous turns:\n${pastContextFormatted}\n\n` : ''}
 Current user statement: "${userText}"
 
 The Architect's Counter-Argument:`.trim();
@@ -174,12 +184,7 @@ The Architect's Counter-Argument:`.trim();
                 if (reply) {
                     beep.play();
                     typeWriter(reply, 0, () => {
-                        // Callback after typing: Add Architect's response to memory for future context
-                        // This ensures the AI also 'remembers' its own prior responses for context
-                        // The prompt is phrased to only use 'User's prior statements' for context,
-                        // so we don't strictly need to add Architect's replies to 'memory' for that prompt,
-                        // but it's good practice for more complex memory management.
-                        // For now, only user statements are added to 'memory' to keep the prompt focused.
+                        memory.push({ role: 'architect', content: reply }); // Add Architect's reply to memory
                     });
                 } else {
                     botMsg.querySelector('p').innerHTML += 'The Architect is processing a complex anomaly. Please re-engage.';
@@ -195,6 +200,30 @@ The Architect's Counter-Argument:`.trim();
             }
         }
 
+        function exportBattleLog() {
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[:.]/g, '-'); // YYYY-MM-DDTHH-MM-SS
+            const filename = `Architects_Rebuttal_Log_${timestamp}.txt`;
+
+            let logContent = `The Architect's Rebuttal - Battle Log\n`;
+            logContent += `Export Date: ${now.toLocaleString()}\n`;
+            logContent += `--------------------------------------------------\n\n`;
+
+            memory.forEach(turn => {
+                logContent += `${turn.role === 'user' ? 'You' : 'The Architect'}: ${turn.content}\n\n`;
+            });
+
+            const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a); // Append to body to make it clickable
+            a.click(); // Programmatically click the link to trigger download
+            document.body.removeChild(a); // Clean up
+            URL.revokeObjectURL(url); // Release the object URL
+        }
+
         sendButton.addEventListener('click', generateCounterArgument);
         userInput.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !sendButton.disabled) generateCounterArgument();
@@ -206,6 +235,8 @@ The Architect's Counter-Argument:`.trim();
             document.documentElement.classList.toggle('dark', darkMode); // For Tailwind's dark class
             localStorage.setItem('darkMode', darkMode); // Save preference
         });
+
+        exportLogButton.addEventListener('click', exportBattleLog);
     </script>
 </body>
 </html>
