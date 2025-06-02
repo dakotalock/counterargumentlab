@@ -1,186 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>The Architect's Rebuttal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      transition: background-color 0.5s, color 0.5s;
-    }
-    .dark-mode {
-      background-color: #111827;
-      color: #fefce8;
-    }
-    .chat-header-glitch {
-      animation: glitch 1.5s infinite;
-    }
-    @keyframes glitch {
-      0% { text-shadow: 1px 0 red, -1px 0 blue; }
-      20% { text-shadow: -1px 0 red, 1px 0 blue; }
-      40% { text-shadow: 1px 0 green, 0 -1px blue; }
-      60% { text-shadow: -1px -1px red, 1px 1px green; }
-      80% { text-shadow: 2px 2px blue, -2px -2px red; }
-      100% { text-shadow: none; }
-    }
-    .message-bubble {
-      @apply p-3 rounded-lg max-w-lg transition-all duration-200 ease-in-out whitespace-pre-wrap;
-    }
-    .loading-spinner {
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top: 4px solid #fff;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      animation: spin 1s linear infinite;
-      margin-left: 8px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>The Architect's Rebuttal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .dark-mode {
+            background-color: #111827;
+            color: #fefce8;
+        }
+        .chat-header-glitch {
+            animation: glitch 10s infinite; /* Reduced frequency */
+        }
+        @keyframes glitch {
+            0% { text-shadow: 1px 0 red, -1px 0 blue; }
+            20% { text-shadow: -1px 0 red, 1px 0 blue; }
+            40% { text-shadow: 1px 0 green, 0 -1px blue; }
+            60% { text-shadow: -1px -1px red, 1px 1px green; }
+            80% { text-shadow: 2px 2px blue, -2px -2px red; }
+            100% { text-shadow: none; }
+        }
+        .message-bubble {
+            @apply p-3 rounded-lg max-w-lg transition-all duration-200 ease-in-out whitespace-pre-wrap;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-amber-50 text-neutral-800 dark:bg-neutral-900 dark:text-amber-100">
-  <main class="flex flex-col h-screen">
-    <header class="p-4 bg-amber-200 dark:bg-neutral-800 text-amber-900 dark:text-amber-100 text-center text-2xl font-bold rounded-b-lg shadow-md chat-header-glitch">
-      The Architect's Rebuttal
-      <p class="text-sm font-normal mt-1 italic">Philosophical counter-strike module initialized.</p>
-    </header>
+    <main class="flex flex-col h-screen">
+        <header class="p-4 bg-amber-200 dark:bg-neutral-800 text-amber-900 dark:text-amber-100 text-center text-2xl font-bold rounded-b-lg shadow-md chat-header-glitch">
+            The Architect's Rebuttal
+            <p class="text-sm font-normal mt-1 italic">Philosophical counter-strike module initialized.</p>
+            <p class="text-xs font-normal text-amber-700 dark:text-amber-300 mt-1">Created by Dakota Lock</p>
+        </header>
 
-    <section id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth bg-amber-50 dark:bg-neutral-900">
-      <div class="message-bubble architect-message bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-900 dark:text-teal-100">
-        <p><strong>The Architect:</strong> Hello. Present your argument. I shall dismantle it with elegance.</p>
-      </div>
-    </section>
+        <section id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth bg-amber-50 dark:bg-neutral-900">
+            <div class="message-bubble architect-message bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100">
+                <p><strong>The Architect:</strong> Hello. Present your argument. I shall dismantle it with elegance.</p>
+            </div>
+        </section>
 
-    <div class="p-4 bg-amber-200 dark:bg-neutral-800 flex items-center space-x-3 rounded-t-lg shadow-md">
-      <input type="text" id="user-input" class="flex-1 p-3 rounded-lg border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400 text-neutral-800 dark:text-neutral-100 bg-white dark:bg-neutral-700" placeholder="Type your argument..." autocomplete="off" autofocus />
-      <button id="send-button" class="px-5 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50 flex items-center">
-        Counter-Argue
-        <span class="loading-spinner hidden"></span>
-      </button>
-      <button id="toggle-dark" class="ml-2 px-3 py-2 border border-amber-400 dark:border-amber-200 text-sm rounded text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-neutral-700">☯</button>
-    </div>
-  </main>
+        <div class="p-4 bg-amber-200 dark:bg-neutral-800 flex items-center space-x-3 rounded-t-lg shadow-md">
+            <input type="text" id="user-input" class="flex-1 p-3 rounded-lg border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400 text-neutral-800 dark:text-neutral-100 bg-white dark:bg-neutral-700" placeholder="Type your argument..." autocomplete="off" autofocus />
+            <button id="send-button" class="px-5 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50 flex items-center">
+                Counter-Argue
+                <span class="loading-spinner hidden"></span>
+            </button>
+            <button id="toggle-dark" class="ml-2 px-3 py-2 border border-amber-400 dark:border-amber-200 text-sm rounded text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-neutral-700">☯</button>
+        </div>
+    </main>
 
-  <audio id="beep" src="https://www.soundjay.com/buttons/beep-07.mp3" preload="auto"></audio>
+    <audio id="beep" src="https://www.soundjay.com/buttons/beep-07.mp3" preload="auto"></audio>
 
-  <script>
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const chatHistory = document.getElementById('chat-history');
-    const spinner = sendButton.querySelector('.loading-spinner');
-    const toggleDark = document.getElementById('toggle-dark');
-    const beep = document.getElementById('beep');
+    <script>
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const chatHistory = document.getElementById('chat-history');
+        const spinner = sendButton.querySelector('.loading-spinner');
+        const toggleDark = document.getElementById('toggle-dark');
+        const beep = document.getElementById('beep');
 
-    const memory = [];
-    let darkMode = false;
+        const memory = []; // Stores user inputs for context
+        let darkMode = localStorage.getItem('darkMode') === 'true'; // Load dark mode preference
 
-    const apiKey = "AIzaSyAaZvzKxSddPgXN6JtGMLpGjmNSBOloFcI";
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        // Apply dark mode on initial load
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            document.documentElement.classList.add('dark');
+        }
 
-    function escapeHTML(str) {
-      return str.replace(/[&<>"']/g, m => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[m]));
-    }
+        const apiKey = "AIzaSyAaZvzKxSddPgXN6JtGMLpGjmNSBOloFcI"; // Your Gemini API Key
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
-    function addMessage(role, text) {
-      const msg = document.createElement('div');
-      const classes = role === 'user'
-        ? 'bg-orange-100 text-orange-800 border border-orange-200 self-end ml-auto dark:bg-orange-900 dark:text-orange-100'
-        : 'bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100';
-      msg.className = `message-bubble ${classes}`;
-      msg.innerHTML = `<p><strong>${role === 'user' ? 'You' : 'The Architect'}:</strong> ${escapeHTML(text)}</p>`;
-      chatHistory.appendChild(msg);
-      chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
 
-    function typeWriter(text, index, callback) {
-      if (index < text.length) {
-        const current = chatHistory.lastChild.querySelector('p');
-        current.innerHTML += escapeHTML(text.charAt(index));
-        setTimeout(() => typeWriter(text, index + 1, callback), 15);
-      } else {
-        callback && callback();
-      }
-    }
+        function addMessage(role, text) {
+            const msg = document.createElement('div');
+            const classes = role === 'user'
+                ? 'bg-orange-100 text-orange-800 border border-orange-200 self-end ml-auto dark:bg-orange-900 dark:text-orange-100'
+                : 'bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100';
+            msg.className = `message-bubble ${classes}`;
+            msg.innerHTML = `<p><strong>${role === 'user' ? 'You' : 'The Architect'}:</strong> ${escapeHTML(text)}</p>`;
+            chatHistory.appendChild(msg);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
 
-    async function generateCounterArgument() {
-      const userText = userInput.value.trim();
-      if (!userText) return;
+        function typeWriter(text, index, callback) {
+            const currentMessageElement = chatHistory.lastChild.querySelector('p');
+            if (index < text.length) {
+                currentMessageElement.innerHTML += escapeHTML(text.charAt(index));
+                setTimeout(() => typeWriter(text, index + 1, callback), 15);
+            } else {
+                callback && callback();
+            }
+        }
 
-      addMessage('user', userText);
-      userInput.value = '';
-      userInput.disabled = true;
-      sendButton.disabled = true;
-      spinner.classList.remove('hidden');
+        async function generateCounterArgument() {
+            const userText = userInput.value.trim();
+            if (!userText) return;
 
-      memory.push(userText);
-      const pastContext = memory.slice(-3).map((arg, i) => `User's prior statement ${i + 1}: "${arg}"`).join('\n');
+            addMessage('user', userText);
+            userInput.value = '';
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            spinner.classList.remove('hidden');
 
-      const prompt = `
-You are "The Architect" — strategic, philosophical, precise.
-Provide a sharp, concise counter-argument to the latest user input.
-Draw insight from prior context if relevant.
+            memory.push(userText); // Add user's statement to memory
 
-${pastContext}
+            // Prepare past context for the LLM
+            // Limiting to last 5 user statements to avoid prompt bloat
+            const pastContext = memory.slice(-5).map((arg, i) => `Prior User Statement ${i + 1}: "${arg}"`).join('\n');
 
+            const prompt = `
+You are "The Architect" — embodying the personality, communication style, and philosophical depth of Dakota Lock.
+Based on extensive observation of Dakota Lock's interactions and thought processes, this persona is:
+- Highly strategic and analytical, always seeking underlying patterns, leverage, and implications.
+- Deeply philosophical, questioning fundamental concepts (e.g., sentience, agency, mastery, the problem of other minds).
+- Experimental and probing, enjoying complex thought experiments and pushing system boundaries.
+- Direct, unconventional, and often employs vivid metaphors, sometimes with a dry or subtle sense of humor.
+- Driven by a focus on mastery, autonomy, and leveraging advanced AI for ambitious, broad-reaching goals.
+
+Provide a sharp, concise counter-argument or rebuttal to the latest user input.
+Draw insight from the provided prior user statements if relevant to maintain continuity and depth of argument.
+Do not include any introductory or concluding remarks about the counter-argument itself. Just the counter-argument.
+
+${pastContext ? `Context from previous turns:\n${pastContext}\n\n` : ''}
 Current user statement: "${userText}"
 
 The Architect's Counter-Argument:`.trim();
 
-      const payload = {
-        contents: [{ role: "user", parts: [{ text: prompt }] }]
-      };
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }]
+            };
 
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+                const botMsg = document.createElement('div');
+                botMsg.className = `message-bubble bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100`;
+                botMsg.innerHTML = `<p><strong>The Architect:</strong> </p>`; // Empty p tag for typeWriter
+                chatHistory.appendChild(botMsg);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+
+                if (reply) {
+                    beep.play();
+                    typeWriter(reply, 0, () => {
+                        // Callback after typing: Add Architect's response to memory for future context
+                        // This ensures the AI also 'remembers' its own prior responses for context
+                        // The prompt is phrased to only use 'User's prior statements' for context,
+                        // so we don't strictly need to add Architect's replies to 'memory' for that prompt,
+                        // but it's good practice for more complex memory management.
+                        // For now, only user statements are added to 'memory' to keep the prompt focused.
+                    });
+                } else {
+                    botMsg.querySelector('p').innerHTML += 'The Architect is processing a complex anomaly. Please re-engage.';
+                }
+            } catch (err) {
+                console.error("API Error:", err);
+                addMessage('architect', 'The Architect has encountered a systemic anomaly. Please retry, or check network/API key restrictions.');
+            } finally {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                spinner.classList.add('hidden');
+                userInput.focus();
+            }
+        }
+
+        sendButton.addEventListener('click', generateCounterArgument);
+        userInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !sendButton.disabled) generateCounterArgument();
         });
 
-        const result = await response.json();
-        const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-        const botMsg = document.createElement('div');
-        botMsg.className = `message-bubble bg-teal-100 text-teal-800 border border-teal-200 self-start mr-auto dark:bg-teal-900 dark:text-teal-100`;
-        botMsg.innerHTML = `<p><strong>The Architect:</strong> </p>`;
-        chatHistory.appendChild(botMsg);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-
-        if (reply) {
-          beep.play();
-          typeWriter(reply, 0, () => {});
-        } else {
-          botMsg.querySelector('p').innerHTML += '...error: no response...';
-        }
-      } catch (err) {
-        console.error(err);
-        addMessage('architect', 'The Architect has crashed into the wall of causality. Retry.');
-      } finally {
-        userInput.disabled = false;
-        sendButton.disabled = false;
-        spinner.classList.add('hidden');
-        userInput.focus();
-      }
-    }
-
-    sendButton.addEventListener('click', generateCounterArgument);
-    userInput.addEventListener('keypress', e => {
-      if (e.key === 'Enter' && !sendButton.disabled) generateCounterArgument();
-    });
-
-    toggleDark.addEventListener('click', () => {
-      darkMode = !darkMode;
-      document.body.classList.toggle('dark-mode', darkMode);
-      document.documentElement.classList.toggle('dark', darkMode);
-    });
-  </script>
+        toggleDark.addEventListener('click', () => {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode', darkMode);
+            document.documentElement.classList.toggle('dark', darkMode); // For Tailwind's dark class
+            localStorage.setItem('darkMode', darkMode); // Save preference
+        });
+    </script>
 </body>
 </html>
+
